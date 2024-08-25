@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-
 # Cargamos nuestro archivo
 df = pd.read_csv('df_final.csv')
 x = df.drop('class', axis=1).values
@@ -19,7 +18,7 @@ b = 0
 
 # Parámetros
 learning_rate = 0.01
-epochs = 3000
+epochs = 6000
 
 # Función Sigmoide
 def sigmoid(z):
@@ -79,7 +78,7 @@ def predict(x, w, b):
 # Evaluación del modelo en el conjunto de prueba
 predicciones = predict(x_test, w, b)
 accuracy = np.mean(predicciones == y_test)
-print(f'Accuracy en el conjunto de prueba: {accuracy * 100:.2f}%')
+print(f'Precisión en el conjunto de prueba: {accuracy * 100:.2f}%')
 
 # Calcular la matriz de confusión
 cm = confusion_matrix(y_test, predicciones)
@@ -89,37 +88,3 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm)
 disp.plot(cmap=plt.cm.Blues)
 plt.title('Confusion Matrix')
 plt.show()
-
-
-""" #Función main que entrena el modelo y manda a llamar a las funciones para poder hacerlo
-def train(x, y, w, b, learning_rate, epochs):
-    for e in range(epochs):
-        n = len(y)
-        w, b = GD(x, y, w, b, learning_rate, n)
-        current_loss = loss(x, y, w, b, n)
-        print(f'Epoch {e}, Loss {current_loss}, Bias {b}')
-
-w, b = train(x, y, w, b, learning_rate, epochs) """
-
-""" #Función main que entrena el modelo, manda a llamar a las funciones para poder hacerlo e imprime un plt del entrenamiento del modelo
-def train(x, y, w, b, learning_rate, epochs):
-    loss_values = []  #Almacenamos los valores de loss
-    fig, ax = plt.subplots()
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Loss')
-    ax.set_title('Training')
-
-    for e in range(epochs):
-        n = len(y)
-        w, b = GD(x, y, w, b, learning_rate, n)
-        current_loss = loss(x, y, w, b, n)
-        loss_values.append(current_loss)
-        ax.plot(loss_values)
-        plt.draw()
-        plt.pause(0.1) 
-        print(f'Epoch {e}, Loss {current_loss}, Bias {b}')
-    
-    plt.show()
-
-w, b = train(x, y, w, b, learning_rate, epochs) """
-
