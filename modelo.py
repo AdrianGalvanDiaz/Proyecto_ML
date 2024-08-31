@@ -9,16 +9,20 @@ df = pd.read_csv('df_final.csv')
 x = df.drop('class', axis=1).values
 y = df['class'].values
 
-# Dividimos el dataset en conjunto de entrenamiento y prueba (80% entrenamiento, 20% prueba)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+# Dividimos el dataset en conjunto de entrenamiento + validación (80%) y conjunto de prueba (20%)
+x_train_val, x_test, y_train_val, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+# Luego dividimos el conjunto de entrenamiento + validación en entrenamiento (80%) y validación (20%)
+x_train, x_val, y_train, y_val = train_test_split(x_train_val, y_train_val, test_size=0.25, random_state=42)
+# Nota: 0.25 * 0.8 = 0.2, por lo que x_val e y_val tendrán el 20% de los datos originales
 
 # Hiper-parámetros
 w = np.zeros(x_train.shape[1])
 b = 0
 
 # Parámetros
-learning_rate = 0.01
-epochs = 6000
+learning_rate = 0.1
+epochs = 3000
 
 # Función Sigmoide
 def sigmoid(z):
@@ -51,19 +55,25 @@ def loss(x, y, w, b, n):
         total_error += -y[i]*np.log(hyp) - (1-y[i])*np.log(1-hyp)
     return total_error / n
 
-losses = []
+# Listas para almacenar las pérdidas de entrenamiento y validación
+losses_train = []
+losses_val = []
 
 # Entrenamiento del modelo
 for epoch in range(epochs):
     w, b = GD(x_train, y_train, w, b, learning_rate, len(y_train))
-    current_loss = loss(x_train, y_train, w, b, len(y_train))
-    losses.append(current_loss)
+    current_loss_train = loss(x_train, y_train, w, b, len(y_train))
+    current_loss_val = loss(x_val, y_val, w, b, len(y_val))
+    losses_train.append(current_loss_train)
+    losses_val.append(current_loss_val)
+    
     if epoch % 100 == 0:
-        print(f'Epoch {epoch}, Loss: {current_loss}')
+        print(f'Epoch {epoch}, Training Loss: {current_loss_train}, Validation Loss: {current_loss_val}')
 
-# Gráfica de Loss vs. Épocas
+# Gráfica de Loss vs. Épocas para entrenamiento y validación
 plt.figure(figsize=(10, 6))
-plt.plot(range(epochs), losses, label='Training Loss')
+plt.plot(range(epochs), losses_train, label='Training Loss')
+plt.plot(range(epochs), losses_val, label='Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.title('Loss vs. Epochs')
@@ -78,7 +88,7 @@ def predict(x, w, b):
 # Evaluación del modelo en el conjunto de prueba
 predicciones = predict(x_test, w, b)
 accuracy = np.mean(predicciones == y_test)
-print(f'Precisión en el conjunto de prueba: {accuracy * 100:.2f}%')
+print(f'\nPrecisión en el conjunto de prueba: {accuracy * 100:.2f}%')
 
 # Calcular la matriz de confusión
 cm = confusion_matrix(y_test, predicciones)
@@ -88,3 +98,18 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm)
 disp.plot(cmap=plt.cm.Blues)
 plt.title('Confusion Matrix')
 plt.show()
+
+# Resumen final para el diagnóstico del modelo
+final_training_loss = losses_train[-1]
+final_validation_loss = losses_val[-1]
+
+print(f"\nFinal Training Loss: {final_training_loss}")
+print(f"Final Validation Loss: {final_validation_loss}")
+
+# Diagnóstico final basado en la comparación de errores
+if final_training_loss > 0.05 and final_validation_loss > 0.05:
+    print("El modelo puede estar subajustado (Underfitting).")
+elif final_training_loss < 0.05 and final_validation_loss > final_training_loss * 1.5:
+    print("El modelo puede estar sobreajustado (Overfitting).")
+else:
+    print("El modelo parece estar adecuadamente ajustado (Appropriate fitting).")
