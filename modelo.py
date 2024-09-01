@@ -21,8 +21,8 @@ w = np.zeros(x_train.shape[1])
 b = 0
 
 # Parámetros
-learning_rate = 0.1
-epochs = 3000
+learning_rate = 0.1  # Ajustado en base a la discusión anterior
+epochs = 1000
 
 # Función Sigmoide
 def sigmoid(z):
@@ -86,12 +86,13 @@ def predict(x, w, b):
     return sigmoid(z) >= 0.5
 
 # Evaluación del modelo en el conjunto de prueba
-predicciones = predict(x_test, w, b)
-accuracy = np.mean(predicciones == y_test)
-print(f'\nPrecisión en el conjunto de prueba: {accuracy * 100:.2f}%')
+predicciones_test = predict(x_test, w, b)
+test_accuracy = np.mean(predicciones_test == y_test)
+test_loss = loss(x_test, y_test, w, b, len(y_test))
+print(f'Precisión en el conjunto de prueba: {test_accuracy * 100:.2f}%')
 
 # Calcular la matriz de confusión
-cm = confusion_matrix(y_test, predicciones)
+cm = confusion_matrix(y_test, predicciones_test)
 
 # Graficar la matriz de confusión
 disp = ConfusionMatrixDisplay(confusion_matrix=cm)
@@ -99,17 +100,18 @@ disp.plot(cmap=plt.cm.Blues)
 plt.title('Confusion Matrix')
 plt.show()
 
+# Evaluación del modelo en el conjunto de entrenamiento y validación
+train_accuracy = np.mean(predict(x_train, w, b) == y_train)
+val_accuracy = np.mean(predict(x_val, w, b) == y_val)
+
 # Resumen final para el diagnóstico del modelo
 final_training_loss = losses_train[-1]
 final_validation_loss = losses_val[-1]
 
 print(f"\nFinal Training Loss: {final_training_loss}")
 print(f"Final Validation Loss: {final_validation_loss}")
+print(f"Final Test Loss: {test_loss}")
 
-# Diagnóstico final basado en la comparación de errores
-if final_training_loss > 0.05 and final_validation_loss > 0.05:
-    print("El modelo puede estar subajustado (Underfitting).")
-elif final_training_loss < 0.05 and final_validation_loss > final_training_loss * 1.5:
-    print("El modelo puede estar sobreajustado (Overfitting).")
-else:
-    print("El modelo parece estar adecuadamente ajustado (Appropriate fitting).")
+print(f"Precisión en el conjunto de entrenamiento: {train_accuracy * 100:.2f}%")
+print(f"Precisión en el conjunto de validación: {val_accuracy * 100:.2f}%")
+
