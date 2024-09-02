@@ -1,79 +1,70 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Cargar los datos
 df = pd.read_csv('df_final.csv')
 
-# Separar las características (X) y la variable objetivo (y)
-X = df.drop('class', axis=1)  # Suponiendo que 'class' es la columna objetivo
+X = df.drop('class', axis=1)  
 y = df['class']
 
 # Dividir los datos en conjunto de entrenamiento, validación y prueba
 X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.25, random_state=42)
 
-# Crear el modelo de Random Forest
-# rf_model = RandomForestClassifier(n_estimators=1, random_state=42)
-# rf_model = RandomForestClassifier()
-rf_model = RandomForestClassifier(
-    n_estimators=10,
-    max_depth=5,
-    # max_features='sqrt',
-    # bootstrap=False,
-    random_state=42,
-)
+# Parámetros de RandomForest (max_depth, n_estimators)
+# parameters = np.array([[2,1],[2,10],[2,100],[5,1],[5,10],[5,100],[15,1],[15,10],[15,100]])
+parameters = np.array([[1,1],[1,5],[1,10],[3,1],[3,5],[3,10],[5,1],[5,5],[5,10]])
 
-# Entrenar el modelo
-rf_model.fit(X_train, y_train)
+# Inicializar listas para almacenar los modelos y las precisiones
+models = []
+train_scores = []
+val_scores = []
 
-# Evaluar el modelo en los conjuntos de validación y prueba
-y_pred_val = rf_model.predict(X_val)
-y_pred_test = rf_model.predict(X_test)
+# Entrenar los modelos para cada combinación de parámetros
+for params in parameters:    
+    # Entrenar el modelo
+    forest = RandomForestClassifier(max_depth=params[0], n_estimators=params[1], random_state=42)
+    model = forest.fit(X_train, y_train)
+    
+    # Calcular y almacenar los scores
+    train_score = accuracy_score(y_train, model.predict(X_train))
+    val_score = accuracy_score(y_val, model.predict(X_val))
+    models.append(model)
+    train_scores.append(train_score)
+    val_scores.append(val_score)
+    
+    # Imprimir los scores
+    print(f"max_depth={params[0]} \t n_estimators={params[1]} \t train_score={train_score:.4f} \t val_score={val_score:.4f}")
 
-# Calcular y mostrar la precisión en los conjuntos de validación y prueba
-val_accuracy = accuracy_score(y_val, y_pred_val)
+# Reshape de los scores para visualización
+max_depth = np.unique(parameters[:,0])
+n_estimators  = np.unique(parameters[:,1])
+train_scores_2d = np.around(np.array(train_scores).reshape(3,3), decimals=4)
+val_scores_2d =  np.around(np.array(val_scores).reshape(3,3), decimals=4)
+
+# Función para graficar el heatmap
+def plot_heap_map(X, x_params, y_params, title, ax):
+    im = ax.imshow(X)
+    ax.set_xticks(np.arange(len(x_params)))
+    ax.set_yticks(np.arange(len(y_params)))
+    ax.set_xticklabels(x_params)
+    ax.set_yticklabels(y_params)
+    for i in range(len(x_params)):
+        for j in range(len(y_params)):
+            text = ax.text(j, i, X[i, j], ha="center", va="center", color="r")
+    ax.set_title(title)
+
+# Graficar los heatmaps para train y validation scores
+fig, axes = plt.subplots(1, 2, figsize=(15, 15))
+plot_heap_map(train_scores_2d, n_estimators, max_depth, 'Train Scores', axes[0])
+plot_heap_map(val_scores_2d, n_estimators, max_depth, 'Validation Scores', axes[1])
+plt.show()
+
+# Calcular y mostrar el accuracy del conjunto de prueba
+best_model = models[np.argmax(val_scores)]
+y_pred_test = best_model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred_test)
-print(f'Precisión en el conjunto de validación: {val_accuracy * 100:.2f}%')
-print(f'Precisión en el conjunto de prueba: {test_accuracy * 100:.2f}%')
-
-# Mostrar el reporte de clasificación y la matriz de confusión
-print("\nReporte de clasificación en el conjunto de prueba:")
-print(classification_report(y_test, y_pred_test))
-
-# Matriz de confusión
-cm = confusion_matrix(y_test, y_pred_test)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-disp.plot(cmap=plt.cm.Blues)
-plt.title('Confusion Matrix - Random Forest')
-plt.show()
-
-# Importancia de las características
-features = pd.DataFrame(rf_model.feature_importances_, index=X.columns, columns=['Importance'])
-print(features.head(20))
-
-# Generar la curva de aprendizaje
-train_sizes, train_scores, val_scores = learning_curve(rf_model, X_train, y_train, cv=5, 
-                                                      scoring='accuracy', n_jobs=-1, 
-                                                      train_sizes=np.linspace(0.1, 1.0, 10), random_state=42)
-
-# Calcular medias y desviaciones estándar
-train_mean = np.mean(train_scores, axis=1)
-val_mean = np.mean(val_scores, axis=1)
-
-train_std = np.std(train_scores, axis=1)
-val_std = np.std(val_scores, axis=1)
-
-# Graficar la curva de aprendizaje
-plt.plot(train_sizes, train_mean, label='Training Accuracy')
-plt.plot(train_sizes, val_mean, label='Validation Accuracy')
-plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1)
-plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, alpha=0.1)
-plt.xlabel('Training Data Size')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.title('Learning Curve')
-plt.show()
+print(f'Accuracy en el conjunto de prueba: {test_accuracy * 100:.2f}%')
