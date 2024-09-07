@@ -65,23 +65,31 @@ train_sizes, train_scores, val_scores = learning_curve(rf_model, X_train, y_trai
                                                       scoring='accuracy', n_jobs=-1,
                                                       train_sizes=np.linspace(0.1, 1.0, 10), random_state=42)
 
-
-# Calcular medias y desviaciones estándar
+# Calcular medias y desviaciones estándar para entrenamiento y validación
 train_mean = np.mean(train_scores, axis=1)
 val_mean = np.mean(val_scores, axis=1)
-
-
 train_std = np.std(train_scores, axis=1)
 val_std = np.std(val_scores, axis=1)
 
+# Para el test accuracy
+test_scores = []
+for train_size in train_sizes:
+    rf_model.fit(X_train[:train_size], y_train[:train_size])
+    test_pred = rf_model.predict(X_test)
+    test_acc = accuracy_score(y_test, test_pred)
+    test_scores.append(test_acc)
 
-# Graficar la curva de aprendizaje
-plt.plot(train_sizes, train_mean, label='Training Accuracy')
-plt.plot(train_sizes, val_mean, label='Validation Accuracy')
-plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1)
-plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, alpha=0.1)
+test_mean = np.array(test_scores)
+
+# Graficar la curva de aprendizaje incluyendo el test accuracy
+plt.plot(train_sizes, train_mean, label='Training Accuracy', color='blue')
+plt.plot(train_sizes, val_mean, label='Validation Accuracy', color='green')
+plt.plot(train_sizes, test_mean, label='Test Accuracy', color='red', linestyle='--')
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1, color='blue')
+plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, alpha=0.1, color='green')
+
 plt.xlabel('Training Data Size')
 plt.ylabel('Accuracy')
-plt.legend()
 plt.title('Learning Curve')
+plt.legend(loc='best')
 plt.show()

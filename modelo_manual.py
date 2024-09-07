@@ -21,7 +21,7 @@ w = np.zeros(x_train.shape[1])
 b = 0
 
 # Parámetros
-learning_rate = 0.1  # Ajustado en base a la discusión anterior
+learning_rate = 0.01  # Ajustado en base a la discusión anterior
 epochs = 1000
 
 # Función Sigmoide
