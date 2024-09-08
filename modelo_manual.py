@@ -22,7 +22,7 @@ b = 0
 
 # Parámetros
 learning_rate = 0.01  # Ajustado en base a la discusión anterior
-epochs = 1000
+epochs = 6000
 
 # Función Sigmoide
 def sigmoid(z):
